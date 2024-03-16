@@ -1,0 +1,16 @@
+[package]
+name = "pingora-reverse-proxy"
+version = "0.1.0"
+authors = ["Marco Inacio <m@marcoinacio.com>"]
+license = "Apache-2.0 or MIT"
+edition = "2021"
+
+[dependencies]
+pingora = { version = "0.1.0", features = ["proxy"] }
+structopt = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "signal"] }
+pretty_env_logger = "0.5"
+jemallocator = "0.5"
+async-trait = "0.1.42"
+log = "0.4"
+http = "1"
