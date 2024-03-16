@@ -1,6 +1,16 @@
 # Pingora reverse proxy example
 
-Usage:
+Create a reverse proxy that connects backend HTTP or HTTPs services to a single HTTPs frontend (similar to what is generally done with Nginx) serving distinct SSL certificates (using SNI and the host header) for each backend service.
+
+In this example, if you connect to https://127.0.0.1:4430
+
+* with an SNI and Host header of somedomain.com, you will be served an SSL certificate to somedomain.com and a proxied connection to http://127.0.0.1:4000.
+
+* with an SNI and Host header of one.one.one.one, you will be served an SSL certificate to one.one.one.one and a proxied connection to https://one.one.one.one.
+
+# Usage
+
+Create some self-signed certificates:
 
 ```bash
 mkdir -p keys &&
@@ -8,13 +18,19 @@ openssl req -x509 -sha256 -days 356 -nodes -newkey rsa:2048 -subj "/CN=somedomai
 openssl req -x509 -sha256 -days 356 -nodes -newkey rsa:2048 -subj "/CN=one.one.one.one/C=UK/L=London" -keyout keys/one_key.pem -out keys/one_cert.crt
 ```
 
+Start the service.
+
 ```bash
 cargo run
 ```
 
+Start some HTTP server on port 4000, e.g.:
+
 ```bash
 cd $(mktemp -d) && touch somefile && python -m http.server 4000
 ```
+
+Play:
 
 ```bash
 curl --connect-to somedomain.com:443:127.0.0.1:4430 https://somedomain.com -vk
