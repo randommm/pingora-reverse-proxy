@@ -1,15 +1,15 @@
-use super::service::HostConfig;
+use super::service::HostConfigPlain;
 use async_trait::async_trait;
 use http::HeaderName;
 use log::debug;
 use pingora::prelude::{HttpPeer, ProxyHttp, Result, Session};
 
 pub struct ProxyApp {
-    host_configs: Vec<HostConfig>,
+    host_configs: Vec<HostConfigPlain>,
 }
 
 impl ProxyApp {
-    pub fn new(host_configs: Vec<HostConfig>) -> Self {
+    pub fn new(host_configs: Vec<HostConfigPlain>) -> Self {
         ProxyApp { host_configs }
     }
 }

@@ -12,11 +12,11 @@ use std::sync::Arc;
 struct Callback(Vec<(String, tls::x509::X509, tls::pkey::PKey<tls::pkey::Private>)>);
 
 impl Callback {
-    fn new(config: Vec<HostConfig>) -> Self {
+    fn new(config: Vec<HostConfigTls>) -> Self {
         let config = config
             .into_iter()
             .map(
-                |HostConfig {
+                |HostConfigTls {
                      proxy_hostname,
                      cert_path,
                      key_path,
@@ -49,7 +49,7 @@ impl TlsAccept for Callback {
 }
 
 #[derive(Clone)]
-pub struct HostConfig {
+pub struct HostConfigTls {
     pub proxy_addr: String,
     pub proxy_tls: bool,
     pub proxy_hostname: String,
@@ -60,15 +60,43 @@ pub struct HostConfig {
 pub fn proxy_service_tls(
     server_conf: &Arc<ServerConf>,
     listen_addr: &str,
-    host_configs: Vec<HostConfig>,
+    host_configs: Vec<HostConfigTls>,
 ) -> impl pingora::services::Service {
-    let proxy_app = ProxyApp::new(host_configs.clone());
+    let plain_host_config = host_configs
+        .iter()
+        .map(|x| HostConfigPlain {
+            proxy_addr: x.proxy_addr.clone(),
+            proxy_tls: x.proxy_tls,
+            proxy_hostname: x.proxy_hostname.clone(),
+        })
+        .collect();
+    let proxy_app = ProxyApp::new(plain_host_config);
     let mut service = http_proxy_service(server_conf, proxy_app);
 
     let cb = Callback::new(host_configs);
     let cb = Box::new(cb);
     let tls_settings = TlsSettings::with_callbacks(cb).unwrap();
     service.add_tls_with_settings(listen_addr, None, tls_settings);
+
+    service
+}
+
+#[derive(Clone)]
+pub struct HostConfigPlain {
+    pub proxy_addr: String,
+    pub proxy_tls: bool,
+    pub proxy_hostname: String,
+}
+
+pub fn proxy_service_plain(
+    server_conf: &Arc<ServerConf>,
+    listen_addr: &str,
+    host_configs: Vec<HostConfigPlain>,
+) -> impl pingora::services::Service {
+    let proxy_app = ProxyApp::new(host_configs.clone());
+    let mut service = http_proxy_service(server_conf, proxy_app);
+
+    service.add_tcp(listen_addr);
 
     service
 }
