@@ -42,55 +42,6 @@ impl ProxyHttp for ProxyApp {
     }
 }
 
-// alternative draft: redirect using request_filter
-// #[async_trait]
-// impl ProxyHttp for ProxyApp {
-//     type CTX = Option<HostConfigPlain>;
-//     fn new_ctx(&self) -> Self::CTX {
-//         None
-//     }
-
-//     async fn upstream_peer(
-//         &self,
-//         _session: &mut Session,
-//         ctx: &mut Self::CTX,
-//     ) -> Result<Box<HttpPeer>> {
-//         let host_config = ctx.as_ref().unwrap();
-//         let proxy_to = HttpPeer::new(
-//             host_config.proxy_addr.as_str(),
-//             host_config.proxy_tls,
-//             host_config.proxy_hostname.clone(),
-//         );
-//         let peer = Box::new(proxy_to);
-//         Ok(peer)
-//     }
-
-//     async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
-//         let host_header = session.get_header(header::HOST).unwrap().to_str().unwrap();
-//         debug!("host header: {host_header}");
-
-//         let host_config = self
-//             .host_configs
-//             .iter()
-//             .find(|x| x.proxy_hostname == host_header)
-//             .unwrap();
-
-//         *ctx = Some(host_config.clone());
-
-//         let mut response_header =
-//             ResponseHeader::build(StatusCode::MOVED_PERMANENTLY, None).unwrap();
-//         response_header
-//             .append_header(header::LOCATION, format!("https://{host_header}/"))
-//             .unwrap();
-//         session.set_keepalive(None);
-//         session
-//             .write_response_header(Box::new(response_header))
-//             .await
-//             .unwrap();
-//         Ok(true)
-//     }
-// }
-
 pub struct RedirectApp;
 
 #[async_trait]
