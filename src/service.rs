@@ -1,10 +1,11 @@
-use crate::app::ProxyApp;
+use crate::app::{ProxyApp, RedirectApp};
 use async_trait::async_trait;
 use log::debug;
 use pingora::{
     listeners::{TlsAccept, TlsSettings},
     prelude::http_proxy_service,
     server::configuration::ServerConf,
+    services::listening::Service,
     tls::{self, ssl},
 };
 use std::sync::Arc;
@@ -98,5 +99,11 @@ pub fn proxy_service_plain(
 
     service.add_tcp(listen_addr);
 
+    service
+}
+
+pub fn new_http_redirect_app(listen_addr: &str) -> Service<RedirectApp> {
+    let mut service = Service::new("Echo Service HTTP".to_string(), Arc::new(RedirectApp {}));
+    service.add_tcp(listen_addr);
     service
 }

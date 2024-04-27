@@ -1,8 +1,12 @@
 use super::service::HostConfigPlain;
 use async_trait::async_trait;
-use http::HeaderName;
+use http::{header, Response, StatusCode};
 use log::debug;
-use pingora::prelude::{HttpPeer, ProxyHttp, Result, Session};
+use pingora::{
+    apps::http_app::ServeHttp,
+    prelude::{HttpPeer, ProxyHttp, Result, Session},
+    protocols::http::ServerSession,
+};
 
 pub struct ProxyApp {
     host_configs: Vec<HostConfigPlain>,
@@ -20,11 +24,7 @@ impl ProxyHttp for ProxyApp {
     fn new_ctx(&self) {}
 
     async fn upstream_peer(&self, session: &mut Session, _ctx: &mut ()) -> Result<Box<HttpPeer>> {
-        let host_header = session
-            .get_header(HeaderName::from_static("host"))
-            .unwrap()
-            .to_str()
-            .unwrap();
+        let host_header = session.get_header(header::HOST).unwrap().to_str().unwrap();
         debug!("host header: {host_header}");
 
         let host_config = self
@@ -39,5 +39,78 @@ impl ProxyHttp for ProxyApp {
         );
         let peer = Box::new(proxy_to);
         Ok(peer)
+    }
+}
+
+// alternative draft: redirect using request_filter
+// #[async_trait]
+// impl ProxyHttp for ProxyApp {
+//     type CTX = Option<HostConfigPlain>;
+//     fn new_ctx(&self) -> Self::CTX {
+//         None
+//     }
+
+//     async fn upstream_peer(
+//         &self,
+//         _session: &mut Session,
+//         ctx: &mut Self::CTX,
+//     ) -> Result<Box<HttpPeer>> {
+//         let host_config = ctx.as_ref().unwrap();
+//         let proxy_to = HttpPeer::new(
+//             host_config.proxy_addr.as_str(),
+//             host_config.proxy_tls,
+//             host_config.proxy_hostname.clone(),
+//         );
+//         let peer = Box::new(proxy_to);
+//         Ok(peer)
+//     }
+
+//     async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
+//         let host_header = session.get_header(header::HOST).unwrap().to_str().unwrap();
+//         debug!("host header: {host_header}");
+
+//         let host_config = self
+//             .host_configs
+//             .iter()
+//             .find(|x| x.proxy_hostname == host_header)
+//             .unwrap();
+
+//         *ctx = Some(host_config.clone());
+
+//         let mut response_header =
+//             ResponseHeader::build(StatusCode::MOVED_PERMANENTLY, None).unwrap();
+//         response_header
+//             .append_header(header::LOCATION, format!("https://{host_header}/"))
+//             .unwrap();
+//         session.set_keepalive(None);
+//         session
+//             .write_response_header(Box::new(response_header))
+//             .await
+//             .unwrap();
+//         Ok(true)
+//     }
+// }
+
+pub struct RedirectApp;
+
+#[async_trait]
+impl ServeHttp for RedirectApp {
+    async fn response(&self, http_stream: &mut ServerSession) -> Response<Vec<u8>> {
+        let host_header = http_stream
+            .get_header(header::HOST)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        debug!("host header: {host_header}");
+        let body = "<html><body>301 Moved Permanently</body></html>"
+            .as_bytes()
+            .to_owned();
+        Response::builder()
+            .status(StatusCode::MOVED_PERMANENTLY)
+            .header(header::CONTENT_TYPE, "text/html")
+            .header(header::CONTENT_LENGTH, body.len())
+            .header(header::LOCATION, format!("https://{host_header}"))
+            .body(body)
+            .unwrap()
     }
 }

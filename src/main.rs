@@ -5,7 +5,9 @@ use pingora::{
     server::{configuration::Opt, Server},
     services::{listening::Service as ListeningService, Service},
 };
-use service::{HostConfigPlain, HostConfigTls};
+use service::{
+    new_http_redirect_app, proxy_service_plain, proxy_service_tls, HostConfigPlain, HostConfigTls,
+};
 use std::env;
 use structopt::StructOpt;
 
@@ -25,7 +27,7 @@ pub fn main() {
     let mut my_server = Server::new(opt).unwrap();
     my_server.bootstrap();
 
-    let proxy_service_ssl = service::proxy_service_tls(
+    let proxy_service_ssl = proxy_service_tls(
         &my_server.configuration,
         &format!("0.0.0.0:{https_port}"),
         vec![
@@ -46,9 +48,11 @@ pub fn main() {
         ],
     );
 
-    let proxy_service_plain = service::proxy_service_plain(
+    let http_redirect_app = new_http_redirect_app(&format!("0.0.0.0:{http_port}"));
+
+    let proxy_service_plain = proxy_service_plain(
         &my_server.configuration,
-        &format!("0.0.0.0:{http_port}"),
+        "0.0.0.0:8082",
         vec![HostConfigPlain {
             proxy_addr: "127.0.0.1:4000".to_owned(),
             proxy_tls: false,
@@ -61,6 +65,7 @@ pub fn main() {
 
     let services: Vec<Box<dyn Service>> = vec![
         Box::new(proxy_service_ssl),
+        Box::new(http_redirect_app),
         Box::new(proxy_service_plain),
         Box::new(prometheus_service_http),
     ];
