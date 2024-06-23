@@ -88,6 +88,12 @@ Or a single command with `cargo watch`:
 cargo watch -c -x b -s "sudo setcap 'cap_net_bind_service=+ep' target/debug/pingora-reverse-proxy && cargo run"
 ```
 
+Another option is to use Podman or Docker, e.g.:
+
+```bash
+sudo podman --rm -it -p 80:80 -p 443:443 pingora-reverse-proxy && sudo podman --rm -it -p 80:80 -p 443:443 pingora-reverse-proxy
+```
+
 Start some HTTP server on port 4000, e.g.:
 
 ```bash
