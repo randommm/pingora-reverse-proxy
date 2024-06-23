@@ -82,6 +82,12 @@ Start the service.
 cargo run
 ```
 
+Or a single command with `cargo watch`:
+
+```bash
+cargo watch -c -x b -s "sudo setcap 'cap_net_bind_service=+ep' target/debug/pingora-reverse-proxy && cargo run"
+```
+
 Start some HTTP server on port 4000, e.g.:
 
 ```bash

@@ -19,7 +19,7 @@ pub fn main() {
     let https_port = env::var("HTTPS_PORT").unwrap_or("443".to_owned());
 
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "pingora_reverse_proxy=debug");
+        env::set_var("RUST_LOG", "pingora_reverse_proxy=debug,pingora=error");
     }
     pretty_env_logger::init_timed();
 
