@@ -39,7 +39,7 @@ pub fn main() {
                 key_path: format!("{}/keys/some_domain_key.pem", env!("CARGO_MANIFEST_DIR")),
             },
             HostConfigTls {
-                proxy_addr: "1.1.1.1:443".to_owned(),
+                proxy_addr: "one.one.one.one:443".to_owned(),
                 proxy_tls: true,
                 proxy_hostname: "one.one.one.one".to_owned(),
                 cert_path: format!("{}/keys/one_cert.crt", env!("CARGO_MANIFEST_DIR")),
